@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 from collections import defaultdict
 from datetime import datetime
+import json
 
 app = Flask(__name__)
 
@@ -45,7 +46,9 @@ def view_expenses():
     try:
         conn = sqlite3.connect('finwise.db')
         c = conn.cursor()
-        c.execute('SELECT * FROM expenses')
+        
+        # Get all expenses ordered by date
+        c.execute('SELECT * FROM expenses ORDER BY date DESC')
         expenses = c.fetchall()
 
         # Calculate total spending
@@ -56,12 +59,23 @@ def view_expenses():
         for expense in expenses:
             category_spending[expense[1]] += expense[2]
 
+        # Sort categories by amount spent (descending)
+        category_spending = dict(sorted(category_spending.items(), 
+                                     key=lambda x: x[1], 
+                                     reverse=True))
+
         # Monthly trends
-        monthly_spending = defaultdict(float)
+        monthly_data = defaultdict(float)
         for expense in expenses:
             date = datetime.strptime(expense[3], "%Y-%m-%d")
-            month_year = f"{date.month}-{date.year}"
-            monthly_spending[month_year] += expense[2]
+            # Format as "Jan 2025" for better readability
+            month_year = date.strftime("%b %Y")
+            monthly_data[month_year] += expense[2]
+
+        # Sort monthly data chronologically
+        sorted_months = sorted(monthly_data.keys(),
+                             key=lambda x: datetime.strptime(x, "%b %Y"))
+        monthly_spending = {month: monthly_data[month] for month in sorted_months}
 
         conn.close()
 
@@ -70,12 +84,13 @@ def view_expenses():
             'view_expenses.html',
             expenses=expenses,
             total_spent=total_spent,
-            category_spending=dict(category_spending),
-            monthly_spending=dict(monthly_spending)
+            category_spending=json.dumps(category_spending),
+            monthly_spending=json.dumps(monthly_spending)
         )
     except Exception as e:
         print(f"Error in view_expenses: {str(e)}")
-        conn.close()
+        if 'conn' in locals():
+            conn.close()
         return render_template('error.html', error=str(e))
 
 # Delete expense
