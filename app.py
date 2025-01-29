@@ -42,12 +42,41 @@ def add_expense():
 # View expenses
 @app.route('/view')
 def view_expenses():
-    conn = sqlite3.connect('finwise.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM expenses')
-    expenses = c.fetchall()
-    conn.close()
-    return render_template('view_expenses.html', expenses=expenses)
+    try:
+        conn = sqlite3.connect('finwise.db')
+        c = conn.cursor()
+        c.execute('SELECT * FROM expenses')
+        expenses = c.fetchall()
+
+        # Calculate total spending
+        total_spent = sum(expense[2] for expense in expenses)
+
+        # Categorize expenses
+        category_spending = defaultdict(float)
+        for expense in expenses:
+            category_spending[expense[1]] += expense[2]
+
+        # Monthly trends
+        monthly_spending = defaultdict(float)
+        for expense in expenses:
+            date = datetime.strptime(expense[3], "%Y-%m-%d")
+            month_year = f"{date.month}-{date.year}"
+            monthly_spending[month_year] += expense[2]
+
+        conn.close()
+
+        # Pass all variables to the template
+        return render_template(
+            'view_expenses.html',
+            expenses=expenses,
+            total_spent=total_spent,
+            category_spending=dict(category_spending),
+            monthly_spending=dict(monthly_spending)
+        )
+    except Exception as e:
+        print(f"Error in view_expenses: {str(e)}")
+        conn.close()
+        return render_template('error.html', error=str(e))
 
 # Delete expense
 @app.route('/delete/<int:id>')
@@ -62,35 +91,3 @@ def delete_expense(id):
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
-@app.route('/view')
-def view_expenses():
-    conn = sqlite3.connect('finwise.db')
-    c = conn.cursor()
-    c.execute('SELECT * FROM expenses')
-    expenses = c.fetchall()
-
-    # Calculate total spending
-    total_spent = sum(expense[2] for expense in expenses)  # Make sure this line exists
-
-    # Categorize expenses
-    category_spending = defaultdict(float)
-    for expense in expenses:
-        category_spending[expense[1]] += expense[2]
-
-    # Monthly trends
-    monthly_spending = defaultdict(float)
-    for expense in expenses:
-        date = datetime.strptime(expense[3], "%Y-%m-%d")
-        month_year = f"{date.month}-{date.year}"
-        monthly_spending[month_year] += expense[2]
-
-    conn.close()
-
-    # Pass ALL variables to the template
-    return render_template(
-        'view_expenses.html',
-        expenses=expenses,
-        total_spent=total_spent,  # Pass this!
-        category_spending=dict(category_spending),
-        monthly_spending=dict(monthly_spending)
-    )
