@@ -24,20 +24,13 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Start app by asking for name and salary
 @app.route('/', methods=['GET', 'POST'])
-def welcome():
+def get_user_info():
     if request.method == 'POST':
-        name = request.form['name']
-        salary = float(request.form['salary'])
-
-        # Store in session
-        session['name'] = name
-        session['salary'] = salary
-
-        return redirect(url_for('index'))
-
-    return render_template('welcome.html')
+        session['name'] = request.form['name']
+        session['salary'] = float(request.form['salary'])  # Store as float for calculations
+        return redirect(url_for('index'))  # Redirect to expenses page
+    return render_template('user_info.html')  # Show input form
 
 # Homepage (after entering name & salary)
 @app.route('/home')
@@ -47,38 +40,41 @@ def index():
 
     return render_template('index.html', name=session['name'], salary=session['salary'])
 
-# Add expense
 @app.route('/add', methods=['GET', 'POST'])
 def add_expense():
+    if 'name' not in session:
+        return redirect(url_for('get_user_info'))  # Ask for name if not set
+
     if request.method == 'POST':
         category = request.form['category']
         amount = float(request.form['amount'])
         date = request.form['date']
+        user_name = session['name']  # Store the user's name with expense
 
         conn = sqlite3.connect('finwise.db')
         c = conn.cursor()
-        c.execute('INSERT INTO expenses (category, amount, date) VALUES (?, ?, ?)',
-                  (category, amount, date))
+        c.execute('INSERT INTO expenses (category, amount, date, user_name) VALUES (?, ?, ?, ?)',
+                  (category, amount, date, user_name))
         conn.commit()
         conn.close()
         return redirect(url_for('view_expenses'))
     return render_template('add_expense.html')
 
-# View expenses
 @app.route('/view')
 def view_expenses():
-    if 'name' not in session or 'salary' not in session:
-        return redirect(url_for('welcome'))
+    if 'name' not in session:
+        return redirect(url_for('get_user_info'))  # Redirect if no user data
+
+    user_name = session['name']
 
     try:
         conn = sqlite3.connect('finwise.db')
         c = conn.cursor()
         
-        # Get all expenses ordered by date
-        c.execute('SELECT * FROM expenses ORDER BY date DESC')
+        # Fetch only expenses of the logged-in user
+        c.execute('SELECT * FROM expenses WHERE user_name = ? ORDER BY date DESC', (user_name,))
         expenses = c.fetchall()
 
-        # Calculate total spending
         total_spent = sum(expense[2] for expense in expenses)
 
         # Categorize expenses
@@ -86,10 +82,7 @@ def view_expenses():
         for expense in expenses:
             category_spending[expense[1]] += expense[2]
 
-        # Sort categories by amount spent (descending)
-        category_spending = dict(sorted(category_spending.items(), 
-                                     key=lambda x: x[1], 
-                                     reverse=True))
+        category_spending = dict(sorted(category_spending.items(), key=lambda x: x[1], reverse=True))
 
         # Monthly trends
         monthly_data = defaultdict(float)
@@ -98,9 +91,7 @@ def view_expenses():
             month_year = date.strftime("%b %Y")
             monthly_data[month_year] += expense[2]
 
-        # Sort monthly data chronologically
-        sorted_months = sorted(monthly_data.keys(),
-                             key=lambda x: datetime.strptime(x, "%b %Y"))
+        sorted_months = sorted(monthly_data.keys(), key=lambda x: datetime.strptime(x, "%b %Y"))
         monthly_spending = {month: monthly_data[month] for month in sorted_months}
 
         conn.close()
@@ -110,15 +101,14 @@ def view_expenses():
             expenses=expenses,
             total_spent=total_spent,
             category_spending=json.dumps(category_spending),
-            monthly_spending=json.dumps(monthly_spending),
-            name=session['name'],  # Pass name and salary to display
-            salary=session['salary']
+            monthly_spending=json.dumps(monthly_spending)
         )
     except Exception as e:
         print(f"Error in view_expenses: {str(e)}")
         if 'conn' in locals():
             conn.close()
         return render_template('error.html', error=str(e))
+
 
 # Delete expense
 @app.route('/delete/<int:id>')
@@ -183,6 +173,22 @@ def investment():
                            investment_tips=investment_tips, 
                            api_data=investment_data)
     
+def update_database():
+    conn = sqlite3.connect('finwise.db')
+    c = conn.cursor()
+    
+    # Check if 'user_name' column exists
+    c.execute("PRAGMA table_info(expenses)")
+    columns = [column[1] for column in c.fetchall()]
+    
+    if "user_name" not in columns:
+        c.execute("ALTER TABLE expenses ADD COLUMN user_name TEXT")
+        conn.commit()
+    
+    conn.close()
+
+# Run this function once at startup
+update_database()
 
 
 if __name__ == '__main__':
