@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Suggestions</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            width: 50%;
+        }
+        ul {
+            text-align: left;
+            padding: 0;
+        }
+        li {
+            list-style-type: none;
+            background: #007BFF;
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Hello, {{ name }}!</h2>
+    <p>Your Monthly Salary: ₹{{ salary }}</p>
+    <p>Your Remaining Savings: ₹{{ savings }}</p>
+
+    <h3>💡 Investment Suggestions for You:</h3>
+    <ul>
+        {% for tip in investment_tips %}
+            <li>{{ tip }}</li>
+        {% endfor %}
+    </ul>
+
+    <h3>📊 Investment Market Data:</h3>
+    {% if api_data %}
+        <pre>{{ api_data }}</pre>
+    {% else %}
+        <p>No market data available at the moment.</p>
+    {% endif %}
+
+    <br>
+    <a href="{{ url_for('index') }}">⬅ Back to Home</a>
+</div>
+
+</body>
+</html>

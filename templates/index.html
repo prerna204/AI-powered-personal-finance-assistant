@@ -7,65 +7,68 @@
     <link rel="stylesheet" href="../static/styles.css">
     <style>
         /* Global Styles */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
 
-/* Heading */
-h1 {
-    color: #333;
-    margin-bottom: 20px;
-}
+        /* Heading */
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
 
-/* Navigation Bar */
-nav {
-    background-color: #007BFF;
-    padding: 10px 20px;
-    border-radius: 8px;
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-}
+        /* Navigation Bar */
+        nav {
+            background-color: #007BFF;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
 
-/* Navigation Links */
-nav a {
-    text-decoration: none;
-    color: white;
-    font-weight: bold;
-    padding: 10px 15px;
-    border-radius: 5px;
-    transition: 0.3s ease;
-}
+        /* Navigation Links */
+        nav a {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            padding: 10px 15px;
+            margin-right: 15px;
+            border-radius: 5px;
+            transition: 0.3s ease;
+        }
 
-/* Hover Effect */
-nav a:hover {
-    background-color: #0056b3;
-}
+        /* Hover Effect */
+        nav a:hover {
+            background-color: #0056b3;
+        }
 
-/* Responsive Design */
-@media (max-width: 600px) {
-    nav {
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-    }
-}
-
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            nav {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to FinWise Family</h1>
+    <h1>Welcome, {{ name }}!</h1>
+    <p>Your Monthly Salary: ₹{{ salary }}</p>
+
     <nav>
         <a href="{{ url_for('add_expense') }}">Add Expense</a>
         <a href="{{ url_for('view_expenses') }}">View Expenses</a>
+        <a href="{{ url_for('investment') }}">Investment Suggestions</a>
     </nav>
 </body>
 </html>
