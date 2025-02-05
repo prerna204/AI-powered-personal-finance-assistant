@@ -6,56 +6,53 @@
     <title>Investment Suggestions</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            text-align: center;
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
             padding: 20px;
         }
         .container {
-            background: white;
+            background: #ffffff;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-            width: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            line-height: 1.6;
+        }
+        h2 {
+            color: #007bff;
+        }
+        .ai-suggestions {
+            background: #f1f1f1;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-line;
         }
         ul {
-            text-align: left;
-            padding: 0;
+            padding-left: 20px;
         }
         li {
-            list-style-type: none;
-            background: #007BFF;
-            color: white;
-            padding: 10px;
-            margin: 5px;
-            border-radius: 5px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Hello, {{ name }}!</h2>
-    <p>Your Monthly Salary: ₹{{ salary }}</p>
-    <p>Your Remaining Savings: ₹{{ savings }}</p>
+    <h2>📊 Personalized Financial Plan for {{ name }}</h2>
+    <p><strong>Monthly Salary:</strong> ₹{{ salary }}</p>
+    <p><strong>Total Savings:</strong> ₹{{ savings }}</p>
+    <p><strong>Total Expenses:</strong> ₹{{ total_spent }}</p>
+    
+    <h3>🧾 AI-Generated Suggestions</h3>
+    <div class="ai-suggestions">
+        {{ ai_suggestions | safe }}
+    </div>
 
-    <h3>💡 Investment Suggestions for You:</h3>
+    <h3>📋 General Investment Tips</h3>
     <ul>
         {% for tip in investment_tips %}
             <li>{{ tip }}</li>
         {% endfor %}
     </ul>
-
-    <h3>📊 Investment Market Data:</h3>
-    {% if api_data %}
-        <pre>{{ api_data }}</pre>
-    {% else %}
-        <p>No market data available at the moment.</p>
-    {% endif %}
-
-    <br>
-    <a href="{{ url_for('index') }}">⬅ Back to Home</a>
 </div>
 
 </body>

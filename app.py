@@ -121,44 +121,74 @@ def delete_expense(id):
     return redirect(url_for('view_expenses'))
 
 # Fetch investment recommendations from API
-def get_investment_suggestions():
-    url = 'https://tradematic-cloud.p.rapidapi.com/taskmanager/tasks/0'
-    headers = {
-        'x-rapidapi-key': '76a8f2101cmsh8b82cff487bc52ap1e8f4ajsn0ba57ea6dd45',
-        'x-rapidapi-host': 'tradematic-cloud.p.rapidapi.com'
-    }
-    
-    try:
-        response = requests.get(url, headers=headers)
-        data = response.json()  # Parse JSON response
-        return data  # Return API response
-    except Exception as e:
-        print(f"API Error: {e}")
-        return None
+import google.generativeai as genai
 
-# Investment Page
+genai.configure(api_key="AIzaSyCsQu31o8WJSVmggCavy0NBjVpzlUPVqw0")
+
+# Function to get investment suggestions using Generative AI
+import re
+
+def get_investment_suggestions(savings, salary, expenses):
+    try:
+        generation_config = {
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 40,
+            "max_output_tokens": 1024,
+            "response_mime_type": "text/plain",
+        }
+
+        model = genai.GenerativeModel(
+            model_name="gemini-2.0-flash-exp",
+            generation_config=generation_config,
+        )
+
+        chat_session = model.start_chat(history=[])
+        
+        prompt = f"""
+        I have the following details about a person:
+        Monthly Salary: ₹{salary}
+        Total Savings: ₹{savings}
+        Total Expenses: ₹{expenses}
+
+        Can you suggest personalized saving strategies and investment tips for someone with this financial situation? 
+        Please organize the suggestions into the following sections:
+        1. Immediate Actions for Debt Reduction or Expense Control
+        2. Short-term Savings Strategies
+        3. Long-term Investment Options
+        Provide specific and actionable advice for each section.
+        """
+
+        response = chat_session.send_message(prompt)
+        response_text = response.text.strip()
+
+        # Remove all instances of '**' using regex
+        cleaned_response = re.sub(r'\*\*', '', response_text)
+        
+        return cleaned_response if cleaned_response else "No suggestions found."
+    
+    except Exception as e:
+        print(f"Generative AI Error: {e}")
+        return "Error fetching suggestions."
+
 @app.route('/investment')
 def investment():
     if 'name' not in session or 'salary' not in session:
-        return redirect(url_for('welcome'))  # Redirect if not logged in
+        return redirect(url_for('get_user_info'))  # Redirect if not logged in
 
-    # Fetch user's salary
     salary = session['salary']
-
-    # Get total spending from the database
     conn = sqlite3.connect('finwise.db')
     c = conn.cursor()
-    c.execute('SELECT SUM(amount) FROM expenses')
+    c.execute('SELECT SUM(amount) FROM expenses WHERE user_name = ?', (session['name'],))
     total_spent = c.fetchone()[0] or 0  # Handle None if no expenses
     conn.close()
 
-    # Calculate remaining savings
     savings = salary - total_spent
 
-    # Get investment recommendations from API
-    investment_data = get_investment_suggestions()
+    # Get personalized investment and saving suggestions from Generative AI
+    ai_suggestions = get_investment_suggestions(savings, salary, total_spent)
 
-    # Define investment suggestions based on savings
+    # Define general investment tips based on savings
     if savings < 5000:
         investment_tips = ["Fixed Deposit (FD)", "Recurring Deposit (RD)", "Emergency Fund"]
     elif 5000 <= savings < 20000:
@@ -166,13 +196,15 @@ def investment():
     else:
         investment_tips = ["Stock Market", "Bonds", "Cryptocurrency", "Real Estate"]
 
-    return render_template("investment.html", 
-                           name=session['name'], 
-                           salary=salary, 
-                           savings=savings, 
-                           investment_tips=investment_tips, 
-                           api_data=investment_data)
-    
+    return render_template(
+        "investment.html", 
+        name=session['name'], 
+        salary=salary, 
+        savings=savings, 
+        investment_tips=investment_tips, 
+        ai_suggestions=ai_suggestions
+    )
+
 def update_database():
     conn = sqlite3.connect('finwise.db')
     c = conn.cursor()
