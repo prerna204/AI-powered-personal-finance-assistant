@@ -50,20 +50,13 @@ pip install flask pandas scikit-learn matplotlib plotly sqlite3
 
 ### 🏃 Steps to Run the Project
 
-1. **Clone the repository:**
-
-```bash
-git clone https://github.com/your-username/finwise.git
-cd finwise
-```
-
-2. **Run the application:**
+1. **Run the application:**
 
 ```bash
 python app.py
 ```
 
-3. **Open your browser and go to:**
+2. **Open your browser and go to:**
 
 ```url
 http://localhost:5000
